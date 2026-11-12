@@ -203,14 +203,24 @@ tr.lead td.n::after{content:" 👑"}
 /* شاشات ضيقة: الطاولة فوق واللاعبون تحتها */
 .stack #stage{overflow:auto}
 .stack #felt{display:none}
-.stack #center{position:relative;left:auto;top:auto;transform:none;margin:8px 10px;padding:14px 8px;border-radius:26px;
-  background:radial-gradient(ellipse at 50% 38%,#23877a,#0c3a34);border:8px solid #6b3f1d;box-shadow:inset 0 0 40px rgba(0,0,0,.5)}
-.stack #players{position:static;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 10px 40px}
-.stack .panel{position:relative;width:auto;left:auto!important;top:auto!important}
+.stack #center{position:sticky;top:0;left:auto;transform:none;z-index:4;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:22px;
+  padding:10px 14px 16px;background:linear-gradient(rgba(7,22,21,.97),rgba(7,22,21,.9));border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.stack .piles{--w:78px}
+.stack #players{position:static;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;max-width:1200px;margin:0 auto;padding:16px 14px 60px}
+.stack .panel{position:relative;width:auto;left:auto!important;top:auto!important;padding:12px;border-radius:18px}
+.stack .panel.current{transform:translateY(-2px)}
+.stack .p-name{font-size:19px}
+.stack .p-total{font-size:30px}
+.stack .p-foot{font-size:14px;margin-top:9px}
 @media (max-width:560px){
   .bar .brand{font-size:22px} .pill{font-size:12px;padding:3px 8px}
   .turn .who{font-size:24px} .turn{min-width:100px} .mid{gap:10px}
   .btn.sm{font-size:16px;padding:8px 12px}
+  .bar{flex-wrap:wrap;gap:6px}
+  .bar .icon{width:34px;height:34px}
+  .stack .piles{--w:58px}
+  .stack #center{gap:12px}
+  .stack #players{grid-template-columns:1fr}
 }
 
 /* ---------- الغرف ---------- */
@@ -376,8 +386,8 @@ const bell = (f, d, v = .07, at = 0) => { tone(f, d, { v, at }); tone(f * 2.76, 
 const brass = (f, d, at = 0, v = .07, o = {}) => { tone(f, d, { type: 'sawtooth', lp: 1800, atk: .02, hold: .7, v, at, ...o }); tone(f * 1.005, d, { type: 'sawtooth', lp: 1400, atk: .02, hold: .7, v: v * .6, at, ...o }); };
 const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319];
 const SYN = {
-  // حفيف سحب الورقة ثم طقة قلبها
-  draw() { noise(.16, { f: 900, to: 3800, q: .8, v: .28 }); noise(.05, { type: 'highpass', f: 2500, v: .22, at: .3 }); },
+  // سحب الورقة: نغمة «بوب» صاعدة ثم نقرة هبوطها
+  draw() { tone(420, .09, { to: 840, v: .09 }); tone(210, .09, { to: 105, v: .16, at: .3 }); },
   // رقم سليم: نقرة ترتفع نغمتها كل ما زادت أوراقك
   ok(n = 0) { const f = SCALE[Math.min(n, SCALE.length - 1)]; tone(f, .16, { type: 'triangle', v: .1 }); tone(f * 2, .1, { v: .04 }); },
   // بطاقة نقاط إضافية: رنين عملة
@@ -758,10 +768,8 @@ function syncModal() {
 
 /* ================= الرسم ================= */
 function metrics() {
-  const st = $('#stage'), W = st.clientWidth, H = st.clientHeight, stack = W < 680;
-  const sw = stack ? (W - 30) / 2 : Math.max(150, Math.min(240, W * .21));
-  const cw = Math.round(Math.max(28, Math.min(46, sw * .19)));
-  return { W, H, stack, sw, cw, avail: sw - 26 };
+  const st = $('#stage'), W = st.clientWidth, H = st.clientHeight;
+  return { W, H, stack: true, sw: 0, cw: W < 420 ? 38 : 44, avail: 0 };
 }
 function layout(M) {
   if (M.stack) return;
@@ -809,12 +817,7 @@ function render(just, fresh) {
     p.cards.forEach((c, k) => { const ce = cardEl(c); if (p.status === 'bust') ce.classList.add('dead'); if (isFresh && fresh.res === 'num' && k === p.cards.length - 1) ce.classList.add('pop'); cards.append(ce); });
     if (p.bustCard) { const ce = cardEl(p.bustCard); ce.classList.add('boom'); if (isFresh && fresh.res === 'bust') ce.classList.add('pop'); cards.append(ce); }
     p.mods.forEach((c, k) => { const ce = cardEl(c); if (p.status === 'bust') ce.classList.add('dead'); if (isFresh && fresh.res === 'mod' && k === p.mods.length - 1) ce.classList.add('pop'); cards.append(ce); });
-    const cn = cards.children.length;
-    if (!cn) cards.append(el('span', 'empty', 'لا توجد بطاقات بعد'));
-    else {
-      const step = cn > 1 ? Math.min(M.cw + 4, (M.avail - M.cw) / (cn - 1)) : 0;
-      [...cards.children].forEach((ce, k) => { if (k) ce.style.marginInlineStart = (step - M.cw) + 'px'; });
-    }
+    if (!cards.children.length) cards.append(el('span', 'empty', 'لا توجد بطاقات بعد'));
     const foot = el('div', 'p-foot');
     const l = el('span'); l.append('نقاط الجولة: ', el('b', '', roundScore(p)));
     const dots = el('span', 'dots'); for (let k = 0; k < 7; k++) dots.append(el('i', k < p.cards.length ? 'on' : ''));
@@ -823,6 +826,13 @@ function render(just, fresh) {
     box.append(pn);
   });
   layout(M);
+  // تراكب البطاقات إذا زادت عن عرض المقعد
+  document.querySelectorAll('.p-cards').forEach(c => {
+    const ks = c.querySelectorAll('.card'), n = ks.length;
+    if (n < 2) return;
+    const step = Math.min(M.cw + 5, (c.clientWidth - M.cw) / (n - 1));
+    ks.forEach((ce, k) => { ce.style.marginInlineStart = k ? (step - M.cw) + 'px' : ''; });
+  });
   const top = topOf(S), mine = act === ME && act >= 0;
   $('#turnBox').classList.toggle('mine', mine);
   $('#whoLbl').textContent = mine ? 'دورك الآن!' : 'الدور على';
