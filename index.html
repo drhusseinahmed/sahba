@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سَحبة — لعبة الورق</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0d2b2a; --bg2:#071615; --felt:#12403c;
+  --gold:#f4c95d; --gold2:#e09f3e; --cream:#fbf3e0; --ink:#1c1a17;
+  --ice:#8fdcff; --red:#ff5d5d; --ok:#5fe3a1;
+  --panel:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
+  --disp:"Lalezar","Segoe UI",Tahoma,sans-serif;
+  --body:"Cairo","Segoe UI",Tahoma,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:var(--body);color:#eef5f2;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #1c5a53 0%, transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 6px),
+    linear-gradient(var(--bg1),var(--bg2));
+  background-attachment:fixed; overflow-x:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:0;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- بطاقات ---------- */
+.card{
+  --c:#333; width:var(--w,84px); aspect-ratio:5/7; border-radius:calc(var(--w,84px)*.13);
+  background:linear-gradient(160deg,#fffaf0,#f1e4c4); color:var(--c);
+  position:relative; flex:none; display:grid; place-items:center;
+  box-shadow:0 2px 0 rgba(0,0,0,.25), 0 6px 14px rgba(0,0,0,.35);
+  font-family:var(--disp); user-select:none;
+}
+.card::before{content:"";position:absolute;inset:6%;border-radius:inherit;border:calc(var(--w,84px)*.03) solid var(--c);opacity:.85}
+.card .big{font-size:calc(var(--w,84px)*.62);line-height:1;position:relative;top:.04em}
+.card .big.u{text-decoration:underline;text-decoration-thickness:.07em;text-underline-offset:.08em}
+.card .cn{position:absolute;font-size:calc(var(--w,84px)*.2);line-height:1}
+.card .cn.tl{top:11%;right:13%} .card .cn.br{bottom:11%;left:13%;transform:rotate(180deg)}
+.card .cap{position:absolute;bottom:13%;font-family:var(--body);font-weight:800;font-size:calc(var(--w,84px)*.13);white-space:nowrap}
+.card.act{color:#fff}
+.card.act::before{border-color:rgba(255,255,255,.75)}
+.card.act .big{font-size:calc(var(--w,84px)*.48);top:-.12em;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.card.x2{background:linear-gradient(160deg,#ffd66b,#e08a1e)}
+.card.p4,.card.p8{background:linear-gradient(160deg,#58d68d,#16885a)}
+.card.fr{background:linear-gradient(160deg,#9fe6ff,#2b7fd1)}
+.card.d3{background:linear-gradient(160deg,#c79bff,#6a35c9)}
+.card.ch{background:linear-gradient(160deg,#ff9ab8,#d42a63)}
+.card.back{
+  background:
+    radial-gradient(circle at 50% 50%, var(--gold) 0 16%, transparent 17%),
+    repeating-linear-gradient(45deg,#7a1f3d 0 6px,#8f2748 6px 12px);
+  color:#7a1f3d;
+}
+.card.back::before{border-color:var(--gold)}
+.card.back::after{content:"س";font-size:calc(var(--w,84px)*.3);position:relative;top:.02em}
+.card.dead{filter:grayscale(1) brightness(.75)}
+.card.boom{outline:3px solid var(--red);outline-offset:-3px;filter:none}
+.card.pop{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4) rotate(-12deg);opacity:0}}
+
+/* ---------- شاشة الإعداد ---------- */
+#setup{max-width:560px;margin:0 auto;padding:28px 16px 60px}
+.logo{font-family:var(--disp);text-align:center;line-height:1}
+.logo h1{font-size:clamp(64px,17vw,110px);color:var(--gold);text-shadow:0 4px 0 #8a4b12,0 12px 30px rgba(0,0,0,.5);font-weight:400}
+.logo p{font-family:var(--body);opacity:.8;margin-top:4px}
+.fan{display:flex;justify-content:center;margin:18px 0 26px;--w:64px;direction:ltr}
+.fan .card{margin:0 -10px;transform:rotate(calc((var(--i) - 2)*9deg)) translateY(calc((var(--i) - 2)*(var(--i) - 2)*5px));animation:deal .6s calc(var(--i)*.08s) backwards cubic-bezier(.2,1.2,.3,1)}
+@keyframes deal{from{transform:translateY(-140px) rotate(40deg);opacity:0}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;backdrop-filter:blur(4px)}
+.box h2{font-family:var(--disp);font-weight:400;font-size:24px;color:var(--gold);margin-bottom:10px}
+.prow{display:flex;gap:8px;margin-bottom:8px;align-items:center;animation:rowin .25s}
+@keyframes rowin{from{opacity:0;transform:translateY(-6px)}}
+.prow .num{width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--ink);display:grid;place-items:center;font-weight:800;flex:none}
+input{font-family:inherit;font-size:17px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:#fff;width:100%;outline:none}
+input:focus{border-color:var(--gold)}
+.icon{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.08);font-size:18px;flex:none;transition:.15s}
+.icon:hover{background:rgba(255,255,255,.18)}
+.ghost{background:rgba(255,255,255,.08);border:1px dashed var(--line);border-radius:12px;padding:10px;width:100%;font-weight:600}
+.ghost:hover{background:rgba(255,255,255,.14)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.08);font-weight:600}
+.chip.on{background:var(--gold);color:var(--ink)}
+.btn{
+  font-family:var(--disp);font-size:22px;padding:12px 26px;border-radius:16px;
+  background:linear-gradient(#ffd97a,var(--gold2));color:#3b2203;
+  box-shadow:0 5px 0 #8a4b12,0 10px 20px rgba(0,0,0,.35);transition:transform .08s, box-shadow .08s, filter .15s;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #8a4b12}
+.btn.ice{background:linear-gradient(#b6ecff,#4aa3e6);color:#06304f;box-shadow:0 5px 0 #1d5c94,0 10px 20px rgba(0,0,0,.35)}
+.btn.ice:active{box-shadow:0 1px 0 #1d5c94}
+.btn:disabled{filter:grayscale(.9) brightness(.6);cursor:not-allowed;transform:none}
+.btn.wide{width:100%;margin-top:18px;font-size:28px}
+.link{background:none;text-decoration:underline;opacity:.8;margin-top:14px;display:block;width:100%;text-align:center;font-size:15px}
+
+/* ---------- شاشة اللعب ---------- */
+#game{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#hud{flex:none;padding:8px 14px;z-index:5}
+#stage{position:relative;flex:1;min-height:0}
+#felt{position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 38%,#23877a 0%,#125248 62%,#0c3a34 100%);
+  border:14px solid #6b3f1d;
+  box-shadow:inset 0 0 0 3px rgba(0,0,0,.35),inset 0 0 70px rgba(0,0,0,.55),0 0 0 4px #2e1908,0 24px 60px rgba(0,0,0,.55)}
+#felt::after{content:"";position:absolute;inset:9%;border-radius:50%;border:2px solid rgba(255,255,255,.09)}
+#center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px}
+.mid{display:flex;align-items:center;gap:18px}
+.piles{display:flex;gap:12px;direction:ltr;--w:clamp(50px,9vh,74px)}
+#pile{width:var(--w);aspect-ratio:5/7;border-radius:calc(var(--w)*.13);border:2px dashed rgba(255,255,255,.28);display:grid;place-items:center}
+#pile .card{transform:rotate(7deg)}
+.bar{display:flex;align-items:center;gap:10px;max-width:1200px;margin:0 auto}
+.bar .brand{font-family:var(--disp);font-size:28px;color:var(--gold)}
+.pill{background:rgba(255,255,255,.08);border-radius:99px;padding:4px 12px;font-size:14px;font-weight:600;white-space:nowrap}
+.pill b{color:var(--gold)}
+.sp{flex:1}
+#deck{position:relative}
+#deck .card{box-shadow:2px 2px 0 #5d1830,4px 4px 0 #4b1226,6px 6px 0 #3a0e1e,0 14px 20px rgba(0,0,0,.45)}
+#deckN{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold);font-weight:800;font-size:13px;border-radius:99px;padding:0 9px;border:1px solid var(--gold)}
+.turn{text-align:center;min-width:130px}
+.turn small{opacity:.7;font-size:13px}
+.turn .who{font-family:var(--disp);font-size:30px;line-height:1.15;color:#fff}
+.turn .risk{font-size:14px;font-weight:600}
+.acts{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+#players{position:absolute;inset:0}
+.panel{position:absolute;width:var(--sw);background:rgba(9,30,28,.9);border:2px solid var(--line);border-radius:16px;padding:10px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.45);transition:border-color .25s, box-shadow .25s, opacity .25s}
+.panel.current{border-color:var(--gold);box-shadow:0 0 0 4px rgba(244,201,93,.25),0 0 40px rgba(244,201,93,.45);transform:scale(1.06);z-index:3}
+.panel.current::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:glow 1.6s infinite;box-shadow:inset 0 0 26px rgba(244,201,93,.25)}
+@keyframes glow{50%{opacity:.25}}
+.p-head{display:flex;align-items:center;gap:8px}
+.p-name{font-weight:800;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font-size:12px;font-weight:800;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.p-total{margin-inline-start:auto;font-family:var(--disp);font-size:24px;color:var(--gold);line-height:1}
+.prog{height:4px;border-radius:9px;background:rgba(255,255,255,.1);margin:4px 0 7px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:9px;transition:width .6s}
+.p-cards{--w:var(--cw);display:flex;flex-wrap:nowrap;min-height:calc(var(--cw)*1.4 + 4px);align-items:center}
+.p-cards .cn.tl{font-size:calc(var(--w)*.3);top:8%;right:10%}
+.p-cards .cn.br{display:none}
+.p-cards .empty{opacity:.4;font-size:13px}
+.p-cards .sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+.p-foot{display:flex;justify-content:space-between;margin-top:6px;font-size:13px;opacity:.9}
+.p-foot b{font-size:15px;color:var(--ok)}
+.dots{display:flex;gap:3px;align-items:center;direction:ltr}
+.dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
+.dots i.on{background:var(--gold)}
+.panel.frozen{border-color:var(--ice);background:linear-gradient(160deg,#1d4a5c,#0f2c38)}
+.panel.frozen::before{content:"❄";position:absolute;left:-8px;bottom:-34px;font-size:120px;opacity:.12;pointer-events:none;animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel.frozen .badge{background:var(--ice);color:#06304f}
+.panel.frozen.justnow{animation:freeze .7s}
+@keyframes freeze{0%{filter:brightness(2.2) saturate(0)}100%{filter:none}}
+.panel.bust{border-color:rgba(255,93,93,.6);background:rgba(30,14,16,.92)}
+.panel.bust .badge{background:var(--red);color:#fff}
+.panel.bust .p-foot b{color:var(--red)}
+.panel.bust.justnow{animation:shake .5s}
+@keyframes shake{20%{transform:translateX(9px) rotate(1deg)}40%{transform:translateX(-9px) rotate(-1deg)}60%{transform:translateX(6px)}80%{transform:translateX(-6px)}}
+.panel.seven{border-color:var(--gold);box-shadow:0 0 34px rgba(244,201,93,.5)}
+.panel.seven .badge{background:var(--gold);color:var(--ink)}
+
+/* ---------- البطاقة الطائرة ---------- */
+.fly{position:fixed;z-index:30;perspective:900px;pointer-events:none}
+.fly-in{position:relative;transform-style:preserve-3d;width:var(--w);aspect-ratio:5/7}
+.fly-in .card{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fly-in .ff{transform:rotateY(180deg)}
+.fly.bad .ff{box-shadow:0 0 0 4px var(--red),0 0 40px var(--red)}
+.fly.good .ff{box-shadow:0 0 0 3px var(--gold),0 0 40px var(--gold)}
+
+/* ---------- رسائل ونوافذ ---------- */
+#flash{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:40}
+#flash div{font-family:var(--disp);font-size:clamp(34px,8vw,70px);padding:6px 30px;border-radius:20px;text-align:center;margin-top:36vh;
+  text-shadow:0 4px 0 rgba(0,0,0,.4);animation:flash 1.5s forwards}
+#flash .bad{color:var(--red)} #flash .ice{color:var(--ice)} #flash .gold{color:var(--gold)} #flash .vio{color:#d3b3ff}
+@keyframes flash{0%{transform:scale(.3);opacity:0}15%{transform:scale(1.12);opacity:1}25%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+#overlay{position:fixed;inset:0;background:rgba(3,10,10,.72);backdrop-filter:blur(5px);z-index:50;display:grid;place-items:center;padding:16px;overflow:auto;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+#modal{background:linear-gradient(#17413d,#0e2826);border:1px solid var(--line);border-radius:22px;padding:22px;width:min(520px,100%);box-shadow:0 30px 80px rgba(0,0,0,.6);animation:up .3s cubic-bezier(.2,1.3,.4,1)}
+@keyframes up{from{transform:translateY(30px) scale(.95);opacity:0}}
+#modal h2{font-family:var(--disp);font-weight:400;font-size:30px;color:var(--gold);text-align:center;line-height:1.2}
+#modal .sub{text-align:center;opacity:.85;margin:4px 0 14px}
+.targets{display:grid;gap:8px}
+.tbtn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:2px solid transparent;font-size:18px;font-weight:800;text-align:start;transition:.12s}
+.tbtn:hover{border-color:var(--gold);background:rgba(255,255,255,.15);transform:translateX(-4px)}
+.tbtn span{margin-inline-start:auto;font-weight:600;font-size:14px;opacity:.8}
+.tbtn em{font-style:normal;font-size:13px;font-weight:600;background:var(--gold);color:var(--ink);border-radius:99px;padding:0 8px}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+td{padding:9px 6px;border-bottom:1px solid var(--line);font-size:17px}
+tr{animation:rowin .4s backwards}
+td.n{font-weight:800} td.r{text-align:center;font-weight:800;color:var(--ok)} td.r.z{color:var(--red)}
+td.t{text-align:end;font-family:var(--disp);font-size:24px;color:var(--gold)}
+tr.lead td.n::after{content:" 👑"}
+.rules{font-size:15.5px;line-height:1.9}
+.rules li{margin-inline-start:20px;margin-bottom:4px}
+.rules b{color:var(--gold)}
+.crown{font-size:80px;text-align:center;animation:bob 1.2s infinite}
+@keyframes bob{50%{transform:translateY(-10px) rotate(6deg)}}
+.conf{position:fixed;top:-20px;width:10px;height:16px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.btn.sm{font-size:19px;padding:9px 18px;border-radius:14px}
+/* شاشات ضيقة: الطاولة فوق واللاعبون تحتها */
+.stack #stage{overflow:auto}
+.stack #felt{display:none}
+.stack #center{position:relative;left:auto;top:auto;transform:none;margin:8px 10px;padding:14px 8px;border-radius:26px;
+  background:radial-gradient(ellipse at 50% 38%,#23877a,#0c3a34);border:8px solid #6b3f1d;box-shadow:inset 0 0 40px rgba(0,0,0,.5)}
+.stack #players{position:static;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 10px 40px}
+.stack .panel{position:relative;width:auto;left:auto!important;top:auto!important}
+@media (max-width:560px){
+  .bar .brand{font-size:22px} .pill{font-size:12px;padding:3px 8px}
+  .turn .who{font-size:24px} .turn{min-width:100px} .mid{gap:10px}
+  .btn.sm{font-size:16px;padding:8px 12px}
+}
+
+/* ---------- الغرف ---------- */
+.page{max-width:560px;margin:0 auto;padding:28px 16px 60px}
+.row{display:flex;gap:8px;align-items:center}
+.row input{direction:ltr;font-size:14px;min-width:0}
+.btn.mini{font-size:17px;padding:9px 14px;border-radius:12px;box-shadow:0 3px 0 #8a4b12;white-space:nowrap;flex:none}
+.btn.mini:active{transform:translateY(2px);box-shadow:0 1px 0 #8a4b12}
+#codeIn{text-transform:uppercase;letter-spacing:8px;text-align:center;font-family:var(--disp);font-size:24px}
+.codebox{display:flex;justify-content:center;gap:8px;direction:ltr;margin:4px 0 14px}
+.codebox span{width:50px;height:62px;border-radius:12px;background:linear-gradient(160deg,#fffaf0,#f1e4c4);color:var(--ink);font-family:var(--disp);font-size:38px;display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.seat{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.07);margin-bottom:6px;font-weight:800;font-size:17px;min-height:48px}
+.seat.empty{opacity:.4;font-weight:400;font-size:15px;border:1px dashed var(--line);background:none;justify-content:center}
+.seat .num{width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--ink);display:grid;place-items:center;font-weight:800;flex:none}
+.tag{font-size:12px;font-weight:800;border-radius:99px;padding:1px 9px;background:var(--gold);color:var(--ink);white-space:nowrap}
+.tag.you{background:var(--ok)}
+.err{color:var(--red);text-align:center;min-height:24px;margin-top:10px;font-weight:600}
+.note{text-align:center;opacity:.8;margin-top:14px}
+.bigval{font-family:var(--disp);font-size:30px;color:var(--gold);text-align:center}
+.panel.me .p-name::after{content:" (أنت)";font-weight:400;font-size:12px;opacity:.7}
+.panel.me{border-color:rgba(95,227,161,.55)}
+.panel.me.current{border-color:var(--gold)}
+.turn.mine .who{color:var(--gold)}
+.turn.mine small{color:var(--gold);opacity:1;font-weight:800;animation:glow 1.2s infinite}
+#skipBtn{cursor:pointer;border:1px solid var(--gold);color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- ===== الرئيسية ===== -->
+<section id="home" class="page">
+  <div class="logo"><h1>سَحبة</h1><p>اسحب… بس لا تتكرر!</p></div>
+  <div class="fan" id="fan"></div>
+  <div class="box">
+    <h2 id="homeTitle">اسمك</h2>
+    <p class="note hidden" id="inviteNote" style="margin:0 0 10px"></p>
+    <input id="nameIn" maxlength="14" placeholder="اكتب اسمك" autocomplete="off">
+    <button class="btn wide hidden" id="joinBtn">انضم للغرفة</button>
+    <button class="btn wide" id="createBtn">إنشاء غرفة جديدة</button>
+  </div>
+  <div class="box" id="codeBox" style="margin-top:14px">
+    <h2>عندك رمز دعوة؟</h2>
+    <div class="row"><input id="codeIn" maxlength="5" placeholder="ABCDE" autocomplete="off"><button class="btn mini" id="codeBtn">دخول</button></div>
+  </div>
+  <p class="err" id="homeErr"></p>
+  <button class="link hidden" id="otherBtn">أو أنشئ غرفة جديدة</button>
+  <button class="link" id="rulesBtn0">كيف ألعب؟</button>
+</section>
+
+<!-- ===== غرفة الانتظار ===== -->
+<section id="lobby" class="page hidden">
+  <div class="logo"><h1 style="font-size:60px">سَحبة</h1><p>غرفة الانتظار</p></div>
+  <div class="box" style="margin-top:16px">
+    <h2>رمز الدعوة</h2>
+    <div class="codebox" id="codeShow"></div>
+    <div class="row"><input id="linkIn" readonly><button class="btn mini" id="copyBtn">نسخ الرابط</button></div>
+    <button class="ghost hidden" id="shareBtn" style="margin-top:8px">📤 مشاركة الرابط</button>
+  </div>
+  <div class="box" style="margin-top:14px">
+    <h2>اللاعبون <span id="pcount" style="font-size:16px;opacity:.7"></span></h2>
+    <div id="seats"></div>
+  </div>
+  <div class="box" style="margin-top:14px">
+    <h2>نقاط الفوز</h2>
+    <div id="targetEdit">
+      <input id="target" type="number" min="20" max="9999" step="10" value="200" inputmode="numeric">
+      <div class="chips" id="chips"></div>
+    </div>
+    <p id="targetShow" class="bigval hidden"></p>
+  </div>
+  <button class="btn wide" id="startBtn">ابدأ اللعب</button>
+  <p class="note" id="waitNote"></p>
+  <button class="link" id="leaveBtn">مغادرة الغرفة</button>
+</section>
+
+<!-- ===== اللعب ===== -->
+<section id="game" class="hidden">
+  <header id="hud">
+    <div class="bar">
+      <span class="brand">سَحبة</span>
+      <span class="pill">الجولة <b id="roundN">1</b></span>
+      <span class="pill">الهدف <b id="targetN">200</b></span>
+      <span class="pill">الغرفة <b id="codeN" style="direction:ltr;display:inline-block"></b></span>
+      <span class="sp"></span>
+      <button class="pill hidden" id="skipBtn" title="إذا انقطع اللاعب">⏭ تخطّي</button>
+      <button class="icon" id="muteBtn" title="الصوت">🔊</button>
+      <button class="icon" id="rulesBtn" title="القواعد">؟</button>
+      <button class="icon" id="exitBtn" title="خروج">✕</button>
+    </div>
+  </header>
+  <div id="stage">
+    <div id="felt"></div>
+    <div id="center">
+      <div class="mid">
+        <div class="piles">
+          <div id="deck"><div class="card back"></div><span id="deckN">0</span></div>
+          <div id="pile"></div>
+        </div>
+        <div class="turn" id="turnBox">
+          <small id="whoLbl">الدور على</small>
+          <div class="who" id="who">—</div>
+          <div class="risk" id="risk"></div>
+        </div>
+      </div>
+      <div class="acts">
+        <button class="btn sm" id="drawBtn">اسحب ورقة</button>
+        <button class="btn sm ice" id="stayBtn">❄ جمّد نفسي</button>
+      </div>
+    </div>
+    <main id="players"></main>
+  </div>
+</section>
+
+<div id="overlay" class="hidden"><div id="modal"></div></div>
+<div id="flash"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const MAXP = 8, MINP = 2;
+
+/* ================= الصوت ================= */
+let AC = null, NB = null, muted = false;
+function actx() {
+  AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+// نغمة: o = {type, v, at, to, atk, hold, lp, vib}
+function tone(f, d, o = {}) {
+  try {
+    const a = actx(), t = a.currentTime + (o.at || 0), os = a.createOscillator(), g = a.createGain();
+    os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, t);
+    if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, t + d);
+    const v = o.v || .08;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + (o.atk || .006));
+    if (o.hold) g.gain.setValueAtTime(v, t + d * o.hold);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    let n = os;
+    if (o.lp) { const fl = a.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = o.lp; os.connect(fl); n = fl; }
+    if (o.vib) { const l = a.createOscillator(), lg = a.createGain(); l.frequency.value = o.vib; lg.gain.value = f * .025; l.connect(lg).connect(os.frequency); l.start(t); l.stop(t + d); }
+    n.connect(g).connect(a.destination); os.start(t); os.stop(t + d + .03);
+  } catch (e) {}
+}
+// ضجيج مفلتر (حفيف ورق، تصفيق، ثلج): o = {type, f, to, q, v, at, atk}
+function noise(d, o = {}) {
+  try {
+    const a = actx();
+    if (!NB) { NB = a.createBuffer(1, a.sampleRate * 2, a.sampleRate); const ch = NB.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1; }
+    const t = a.currentTime + (o.at || 0), src = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = NB; src.loop = true;
+    fl.type = o.type || 'bandpass'; fl.Q.value = o.q || 1; fl.frequency.setValueAtTime(o.f || 1500, t);
+    if (o.to) fl.frequency.exponentialRampToValueAtTime(o.to, t + d);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(o.v || .2, t + (o.atk || .008));
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    src.connect(fl).connect(g).connect(a.destination); src.start(t, Math.random()); src.stop(t + d + .03);
+  } catch (e) {}
+}
+const bell = (f, d, v = .07, at = 0) => { tone(f, d, { v, at }); tone(f * 2.76, d * .55, { v: v * .35, at }); tone(f * 5.4, d * .25, { v: v * .15, at }); };
+const brass = (f, d, at = 0, v = .07, o = {}) => { tone(f, d, { type: 'sawtooth', lp: 1800, atk: .02, hold: .7, v, at, ...o }); tone(f * 1.005, d, { type: 'sawtooth', lp: 1400, atk: .02, hold: .7, v: v * .6, at, ...o }); };
+const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319];
+const SYN = {
+  // حفيف سحب الورقة ثم طقة قلبها
+  draw() { noise(.16, { f: 900, to: 3800, q: .8, v: .28 }); noise(.05, { type: 'highpass', f: 2500, v: .22, at: .3 }); },
+  // رقم سليم: نقرة ترتفع نغمتها كل ما زادت أوراقك
+  ok(n = 0) { const f = SCALE[Math.min(n, SCALE.length - 1)]; tone(f, .16, { type: 'triangle', v: .1 }); tone(f * 2, .1, { v: .04 }); },
+  // بطاقة نقاط إضافية: رنين عملة
+  mod() { bell(1319, .12, .07); bell(1760, .5, .08, .09); },
+  // خسارة: بوق حزين «واه واه واه وااااه»
+  bust() {
+    [311, 294, 277].forEach((f, i) => brass(f, .34, i * .36, .08, { vib: 6, lp: 1000 }));
+    brass(262, 1.0, 1.08, .09, { vib: 5, lp: 900, to: 235 });
+  },
+  // تجميد: تكسّر ثلج ورنين بلوري نازل
+  freeze() {
+    noise(.5, { type: 'highpass', f: 7000, to: 2500, v: .12 });
+    [3951, 3136, 2637, 2093, 1568].forEach((f, i) => bell(f, .5, .045, i * .07));
+  },
+  // اسحب ثلاث: ثلاث حفّات سريعة مع صعود
+  d3() { [0, .11, .22].forEach((at, i) => { noise(.09, { f: 1200 + i * 600, to: 3500, v: .22, at }); }); tone(330, .4, { type: 'triangle', to: 990, v: .08, at: .05 }); },
+  // الفرصة أنقذتك: سلّم قيثارة سحري صاعد
+  chance() { [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => bell(f, .5, .05, i * .06)); },
+  // سبع بطاقات: «تا-دا!»
+  seven() {
+    [392, 523, 659].forEach((f, i) => brass(f, .14, i * .13));
+    [523, 659, 784, 1047].forEach(f => brass(f, .9, .4, .05));
+    bell(2093, .9, .05, .4);
+  },
+  // فوز: نشيد نصر قصير مع تصفيق
+  win() {
+    const seq = [[523, .15], [523, .15], [523, .15], [523, .4], [415, .4], [466, .4], [523, .25], [466, .12], [523, .9]];
+    let t = 0; seq.forEach(([f, d]) => { brass(f, d * 1.05, t, .07); brass(f * 1.5, d * 1.05, t, .035); t += d; });
+    for (let i = 0; i < 150; i++) noise(.03 + Math.random() * .03, { f: 900 + Math.random() * 1800, q: 1.5, v: .05 + Math.random() * .08, at: .3 + Math.random() * 3 });
+  },
+  // بداية الجولة: خلط الأوراق
+  shuffle() { for (let i = 0; i < 14; i++) noise(.035, { type: 'highpass', f: 1800 + Math.random() * 1500, v: .16, at: i * .038 + Math.random() * .01 }); },
+  click() { tone(700, .05, { type: 'triangle', v: .06 }); },
+};
+// أصوات خاصة: ضع ملفات mp3 في مجلد sounds بجانب اللعبة (مثل sounds/bust.mp3) وستُستعمل بدل الأصوات المولّدة
+const CUSTOM = {};
+Object.keys(SYN).forEach(k => {
+  try { const a = new Audio(); a.preload = 'auto'; a.addEventListener('canplaythrough', () => { CUSTOM[k] = a; }, { once: true }); a.src = 'sounds/' + k + '.mp3'; } catch (e) {}
+});
+const sfx = {};
+Object.keys(SYN).forEach(k => {
+  sfx[k] = (...args) => {
+    if (muted) return;
+    const c = CUSTOM[k];
+    if (c) { try { c.currentTime = 0; c.play().catch(() => {}); } catch (e) {} } else SYN[k](...args);
+  };
+});
+
+/* ================= البطاقات ================= */
+const ACT = {
+  x2: { big: '×2', cap: 'ضعف النقاط' },
+  p4: { big: '+4', cap: 'نقاط إضافية' },
+  p8: { big: '+8', cap: 'نقاط إضافية' },
+  fr: { big: '❄', cap: 'تجميد' },
+  d3: { big: '3', cap: 'اسحب ثلاث' },
+  ch: { big: '🍀', cap: 'فرصة' },
+};
+function buildDeck() {
+  const d = [];
+  for (let n = 0; n <= 12; n++) for (let i = 0; i < 4; i++) d.push({ t: 'n', v: n });
+  const add = (t, c) => { for (let i = 0; i < c; i++) d.push({ t }); };
+  ['x2', 'p4', 'p8', 'fr', 'd3', 'ch'].forEach(t => add(t, 2));
+  return shuffle(d);
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function cardEl(c) {
+  const e = el('div', 'card');
+  if (!c) { e.classList.add('back'); return e; }
+  if (c.t === 'n') {
+    e.style.setProperty('--c', `hsl(${(c.v * 29 + 195) % 360} 68% 38%)`);
+    e.append(el('span', 'cn tl', c.v), el('span', 'big' + (c.v === 6 || c.v === 9 ? ' u' : ''), c.v), el('span', 'cn br', c.v));
+  } else {
+    e.classList.add('act', c.t);
+    e.append(el('span', 'big', ACT[c.t].big), el('span', 'cap', ACT[c.t].cap));
+  }
+  return e;
+}
+
+/* ================= الإعدادات ================= */
+// بيانات Supabase العامة (المفتاح publishable مخصص للاستعمال في المتصفح). إذا تُركت فارغة تعمل اللعبة محلياً بين تبويبات نفس المتصفح فقط.
+const CFG = {
+  url: 'https://uulaqwzdyzxphzniiqio.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bGFxd3pkeXp4cGh6bmlpcWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2OTM2MjUsImV4cCI6MjA2NTI2OTYyNX0.aP4cTrl60cU8rlfOGXXcjAj8qrDZUrgEHadZpKobVT4',
+};
+const TABLE = 'sahba_rooms';
+
+/* ================= الهوية ================= */
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+let PID = null;
+try { PID = sessionStorage.getItem('sahba_pid'); } catch (e) {}
+PID = PID || store('sahba_pid');
+if (!PID) { PID = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store('sahba_pid', PID); }
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ================= الشبكة ================= */
+function supaNet() {
+  const sb = supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false } });
+  let ch = null, timer = null;
+  const net = {
+    online: true,
+    async create(code, s) { const { error } = await sb.from(TABLE).insert({ code, v: s.v, state: s }); return !error; },
+    async get(code) { const { data, error } = await sb.from(TABLE).select('state').eq('code', code).maybeSingle(); if (error) throw error; return data ? data.state : null; },
+    async update(code, s, prev) {
+      const { data, error } = await sb.from(TABLE).update({ v: s.v, state: s, updated_at: new Date().toISOString() }).eq('code', code).eq('v', prev).select('v');
+      const ok = !error && data && data.length === 1;
+      if (ok && ch) ch.send({ type: 'broadcast', event: 's', payload: s });
+      return ok;
+    },
+    subscribe(code, cb) {
+      net.unsubscribe();
+      ch = sb.channel('sahba-' + code, { config: { broadcast: { self: false } } }).on('broadcast', { event: 's' }, m => cb(m.payload)).subscribe();
+      const poll = () => net.get(code).then(s => { if (s) cb(s); }, () => {});
+      timer = setInterval(poll, 3000);
+      net._poll = poll;
+    },
+    unsubscribe() { if (ch) { sb.removeChannel(ch); ch = null; } clearInterval(timer); net._poll = null; },
+    cleanup() { sb.from(TABLE).delete().lt('updated_at', new Date(Date.now() - 2 * 864e5).toISOString()).then(() => {}, () => {}); },
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && net._poll) net._poll(); });
+  return net;
+}
+function localNet() {
+  const key = c => 'sahba_room_' + c;
+  let cb = null, code0 = null, bc = null;
+  try { bc = new BroadcastChannel('sahba'); bc.onmessage = e => { if (cb && e.data.code === code0) cb(e.data.s); }; } catch (e) {}
+  const net = {
+    online: false,
+    async get(code) { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch (e) { return null; } },
+    async create(code, s) { if (localStorage.getItem(key(code))) return false; localStorage.setItem(key(code), JSON.stringify(s)); return true; },
+    async update(code, s, prev) {
+      const cur = await net.get(code);
+      if (!cur || cur.v !== prev) return false;
+      localStorage.setItem(key(code), JSON.stringify(s));
+      if (bc) bc.postMessage({ code, s });
+      return true;
+    },
+    subscribe(code, c) { code0 = code; cb = c; },
+    unsubscribe() { cb = null; },
+    cleanup() {},
+  };
+  return net;
+}
+const Net = (CFG.url && CFG.key && window.supabase) ? supaNet() : localNet();
+
+/* ================= الحالة ================= */
+let S = null, CODE = null, ME = -1, INVITE = null;
+let queue = [], lastV = 0, pumping = false, sending = false, modalKind = null, modalV = 0, autoV = 0;
+
+function roundScore(p) {
+  if (p.status === 'bust') return 0;
+  let s = p.cards.reduce((a, c) => a + c.v, 0);
+  for (const m of p.mods) if (m.t === 'x2') s *= 2;
+  for (const m of p.mods) { if (m.t === 'p4') s += 4; if (m.t === 'p8') s += 8; }
+  if (p.cards.length >= 7) s += 15;
+  return s;
+}
+function bustRisk(p) {
+  const pool = S.deck.length ? S.deck : S.discard;
+  if (!pool.length || !p.cards.length) return 0;
+  const have = new Set(p.cards.map(c => c.v));
+  return pool.filter(c => c.t === 'n' && have.has(c.v)).length / pool.length;
+}
+const newPlayer = name => ({ id: PID, name, total: 0, cards: [], mods: [], bustCard: null, status: 'active', gain: 0 });
+const topOf = s => (s.q && s.q.length ? s.q[s.q.length - 1] : null);
+// من عليه أن يتصرف الآن
+function actor(s) {
+  if (s.phase !== 'play') return -1;
+  const t = topOf(s);
+  return t ? (t.k === 'pick' ? t.by : t.t) : s.cur;
+}
+
+/* ====== محرك اللعبة: دوال تعدّل نسخة من الحالة وتسجّل الأحداث ====== */
+const sActives = s => s.players.map((p, i) => i).filter(i => s.players[i].status === 'active');
+function sTake(s, ev) {
+  if (!s.deck.length) { s.deck = s.discard.length ? shuffle(s.discard) : buildDeck(); s.discard = []; ev.push({ e: 'shuffle' }); }
+  return s.deck.pop();
+}
+function sFreeze(s, i, ev) { s.players[i].status = 'frozen'; ev.push({ e: 'freeze', p: i, score: roundScore(s.players[i]) }); }
+function sDraw(s, pi, ev) {
+  const p = s.players[pi], c = sTake(s, ev);
+  const dup = c.t === 'n' && p.cards.some(x => x.v === c.v);
+  const ci = p.mods.findIndex(m => m.t === 'ch');
+  const d = { e: 'draw', p: pi, c, n: p.cards.length };
+  ev.push(d);
+  if (dup && ci >= 0) { s.discard.push(c, p.mods.splice(ci, 1)[0]); s.last = c; d.res = 'saved'; }
+  else if (dup) { p.status = 'bust'; p.bustCard = c; d.res = 'bust'; }
+  else if (c.t === 'n') {
+    p.cards.push(c); d.res = 'num';
+    if (p.cards.length >= 7) { p.status = 'seven'; s.over = true; ev.push({ e: 'seven', p: pi }); }
+  }
+  else if (c.t === 'fr' || c.t === 'd3') { s.discard.push(c); s.last = c; d.res = 'act'; s.q.push({ k: 'pick', kind: c.t, by: pi }); }
+  else { p.mods.push(c); d.res = 'mod'; }
+}
+function pickOptions(s, it) { const a = sActives(s); return it.kind === 'fr' ? a.filter(i => i !== it.by) : a; }
+function sPick(s, it, t, ev) {
+  if (it.kind === 'fr') { if (t == null || t < 0) ev.push({ e: 'nofreeze' }); else sFreeze(s, t, ev); }
+  else { ev.push({ e: 'd3', p: t }); s.q.push({ k: 'auto', t, left: 3 }); }
+}
+function sEndRound(s, ev) {
+  s.q = [];
+  s.players.forEach(p => { p.gain = roundScore(p); p.total += p.gain; });
+  const max = Math.max(...s.players.map(p => p.total));
+  const leaders = s.players.filter(p => p.total === max);
+  s.phase = (max >= s.target && leaders.length === 1) ? 'gameEnd' : 'roundEnd';
+  ev.push({ e: 'roundEnd' });
+}
+function sStartRound(s, ev) {
+  s.players.forEach(p => {
+    s.discard.push(...p.cards, ...p.mods); if (p.bustCard) s.discard.push(p.bustCard);
+    p.cards = []; p.mods = []; p.bustCard = null; p.status = 'active'; p.gain = 0;
+  });
+  s.round++;
+  s.starter = (s.starter + 1) % s.players.length;
+  s.cur = s.starter; s.over = false; s.last = null; s.q = []; s.phase = 'play';
+  ev.push({ e: 'round', n: s.round });
+}
+// بعد كل خطوة: ينهي المعلّقات المنتهية، يحسم الاختيارات البديهية، ثم ينقل الدور أو ينهي الجولة
+function settle(s, ev) {
+  for (;;) {
+    if (s.over || !sActives(s).length) return sEndRound(s, ev);
+    const top = topOf(s);
+    if (!top) break;
+    if (top.k === 'auto') {
+      if (top.left <= 0 || s.players[top.t].status !== 'active') { s.q.pop(); continue; }
+      return;
+    }
+    const o = pickOptions(s, top);
+    if (o.length <= 1) { s.q.pop(); sPick(s, top, o.length ? o[0] : (top.kind === 'fr' ? -1 : top.by), ev); continue; }
+    return;
+  }
+  const n = s.players.length; let i = s.cur;
+  do { i = (i + 1) % n; } while (s.players[i].status !== 'active');
+  s.cur = i;
+}
+
+/* ====== الأفعال ====== */
+const A = {
+  draw(s, ev) { if (s.phase !== 'play' || s.q.length || s.cur !== ME) return false; sDraw(s, ME, ev); settle(s, ev); },
+  stay(s, ev) {
+    const p = s.players[ME];
+    if (s.phase !== 'play' || s.q.length || s.cur !== ME || (!p.cards.length && !p.mods.length)) return false;
+    sFreeze(s, ME, ev); settle(s, ev);
+  },
+  pick: t => (s, ev) => {
+    const top = topOf(s);
+    if (s.phase !== 'play' || !top || top.k !== 'pick' || top.by !== ME || !pickOptions(s, top).includes(t)) return false;
+    s.q.pop(); sPick(s, top, t, ev); settle(s, ev);
+  },
+  auto(s, ev) {
+    const top = topOf(s);
+    if (s.phase !== 'play' || !top || top.k !== 'auto' || top.t !== ME) return false;
+    top.left--; sDraw(s, top.t, ev); settle(s, ev);
+  },
+  // المشرف يتصرف بدل لاعب منقطع
+  skip(s, ev) {
+    if (s.phase !== 'play' || s.host !== PID) return false;
+    const top = topOf(s);
+    if (top && top.k === 'auto') { top.left--; sDraw(s, top.t, ev); }
+    else if (top && top.k === 'pick') { s.q.pop(); sPick(s, top, pickOptions(s, top)[0], ev); }
+    else sFreeze(s, s.cur, ev);
+    settle(s, ev);
+  },
+  next(s, ev) { if (s.phase !== 'roundEnd' || ME < 0) return false; sStartRound(s, ev); },
+  start(s, ev) {
+    if (s.phase !== 'lobby' || s.host !== PID || s.players.length < MINP) return false;
+    s.players.forEach(p => { p.total = 0; p.cards = []; p.mods = []; p.bustCard = null; p.gain = 0; });
+    s.deck = buildDeck(); s.discard = []; s.round = 0;
+    s.starter = Math.floor(Math.random() * s.players.length) - 1;
+    sStartRound(s, ev);
+  },
+  again(s) {
+    if (s.phase !== 'gameEnd' || ME < 0) return false;
+    s.phase = 'lobby'; s.q = []; s.deck = []; s.discard = []; s.last = null; s.round = 0;
+    s.players.forEach(p => { p.total = 0; p.cards = []; p.mods = []; p.bustCard = null; p.gain = 0; p.status = 'active'; });
+  },
+  target: v => s => { if (s.phase !== 'lobby' || s.host !== PID || s.target === v) return false; s.target = v; },
+  kick: id => s => {
+    if (s.phase !== 'lobby' || (s.host !== PID && id !== PID)) return false;
+    s.players = s.players.filter(p => p.id !== id);
+    if (s.host === id && s.players.length) s.host = s.players[0].id;
+  },
+};
+async function act(fn) {
+  if (sending || pumping || queue.length || !S) return false;
+  const s = clone(S), ev = [];
+  if (fn(s, ev) === false) return false;
+  s.v = S.v + 1; s.ev = ev;
+  sending = true; setButtons();
+  let ok = false;
+  try { ok = await Net.update(CODE, s, S.v); } catch (e) {}
+  sending = false;
+  if (ok) onState(s);
+  else {
+    let f = null; try { f = await Net.get(CODE); } catch (e) { flash('تعذّر الاتصال', 'bad'); }
+    if (f) onState(f);
+  }
+  setButtons();
+  return ok;
+}
+
+/* ====== استقبال الحالات وعرضها بالترتيب ====== */
+function onState(s) {
+  if (!s || !s.v || s.v <= lastV || !CODE) return;
+  lastV = s.v; queue.push(s); pump();
+}
+async function pump() {
+  if (pumping) return;
+  pumping = true;
+  try {
+    while (queue.length) {
+      const s = queue.shift();
+      try { await present(s, queue.length < 3); } catch (e) { console.error(e); S = s; }
+      if (!CODE) break;
+    }
+  } finally { pumping = false; }
+  idle();
+}
+function idle() {
+  if (!S || !CODE || pumping) return;
+  setButtons();
+  const top = topOf(S);
+  if (S.phase === 'play' && top && top.k === 'auto' && top.t === ME && autoV !== S.v) {
+    autoV = S.v;
+    setTimeout(() => act(A.auto).then(ok => { if (!ok) { autoV = 0; setTimeout(idle, 900); } }), 350);
+  }
+}
+function show(id) {
+  ['home', 'lobby', 'game'].forEach(k => $('#' + k).classList.toggle('hidden', k !== id));
+}
+async function present(s, animate) {
+  const prev = S;
+  const step = animate && prev && s.v === prev.v + 1 && Array.isArray(s.ev);
+  ME = s.players.findIndex(p => p.id === PID);
+  if (s.phase === 'lobby') {
+    if (ME < 0) { leaveLocal('تمت إزالتك من الغرفة'); return; }
+    S = s; if (modalKind === 'result' || modalKind === 'pick') hideModal();
+    show('lobby'); renderLobby();
+    return;
+  }
+  const evs = step ? s.ev : [];
+  const wasMine = prev ? actor(prev) === ME : false;
+  const d = evs.find(e => e.e === 'draw');
+  if (d && prev.phase === 'play' && !document.hidden && !$('#game').classList.contains('hidden')) {
+    if (modalKind === 'pick') hideModal();
+    await flyCard(d.c, d.p, d.res === 'bust', d.res === 'num' || d.res === 'mod' || d.res === 'bust', d.n);
+  }
+  S = s; show('game');
+  if (s.phase === 'play' && modalKind === 'result') hideModal();
+  render(d && d.res === 'bust' ? d.p : undefined, d);
+  const name = i => s.players[i].name;
+  for (const e of evs) {
+    if (e.e === 'draw') {
+      if (e.res === 'bust') { flash(`💥 ${name(e.p)} خسر الجولة!`, 'bad'); await sleep(1100); }
+      else if (e.res === 'saved') { sfx.chance(); flash(`🍀 الفرصة أنقذت ${name(e.p)}!`, 'gold'); await sleep(1200); }
+    }
+    else if (e.e === 'seven') { sfx.seven(); flash('⭐ سبع بطاقات! +15', 'gold'); await sleep(1300); }
+    else if (e.e === 'freeze') { sfx.freeze(); render(e.p); flash(`❄ ${name(e.p)} تجمّد على ${e.score}`, 'ice'); await sleep(1000); }
+    else if (e.e === 'nofreeze') { flash('❄ لا يوجد خصم لتجميده', 'ice'); await sleep(900); }
+    else if (e.e === 'd3') { flash(`🃏 ${name(e.p)} يسحب ثلاث!`, 'vio'); await sleep(900); }
+    else if (e.e === 'shuffle') flash('🔀 خلط الأوراق', 'gold');
+    else if (e.e === 'round') { sfx.shuffle(); flash(`الجولة ${e.n}`, 'gold'); await sleep(600); }
+    else if (e.e === 'roundEnd') await sleep(600);
+  }
+  if (step && !wasMine && actor(s) === ME && !queue.length) { sfx.click(); try { navigator.vibrate && navigator.vibrate(80); } catch (e) {} }
+  syncModal();
+}
+function syncModal() {
+  const top = topOf(S);
+  if (S.phase === 'roundEnd' || S.phase === 'gameEnd') {
+    if (!(modalKind === 'result' && modalV === S.v)) { showResult(); modalKind = 'result'; modalV = S.v; }
+  } else if (S.phase === 'play' && top && top.k === 'pick' && top.by === ME) {
+    if (!(modalKind === 'pick' && modalV === S.v)) { showPick(top); modalKind = 'pick'; modalV = S.v; }
+  } else if (modalKind === 'result' || modalKind === 'pick') hideModal();
+}
+
+/* ================= الرسم ================= */
+function metrics() {
+  const st = $('#stage'), W = st.clientWidth, H = st.clientHeight, stack = W < 680;
+  const sw = stack ? (W - 30) / 2 : Math.max(150, Math.min(240, W * .21));
+  const cw = Math.round(Math.max(28, Math.min(46, sw * .19)));
+  return { W, H, stack, sw, cw, avail: sw - 26 };
+}
+function layout(M) {
+  if (M.stack) return;
+  const pans = [...document.querySelectorAll('.panel')], n = pans.length;
+  const sh = Math.max(...pans.map(p => p.offsetHeight));
+  const rx = M.W / 2 - M.sw / 2 - 10, ry = M.H / 2 - sh / 2 - 10;
+  pans.forEach(p => {
+    const a = 2 * Math.PI * (+p.dataset.pos) / n;
+    p.style.left = (M.W / 2 + rx * Math.sin(a) - M.sw / 2) + 'px';
+    p.style.top = (M.H / 2 + ry * Math.cos(a) - p.offsetHeight / 2) + 'px';
+  });
+  $('#felt').style.inset = `${sh * .5}px ${M.sw * .5}px`;
+}
+// just: رقم لاعب يُحرَّك مقعده، fresh: حدث السحب الأخير لإبراز بطاقته
+function render(just, fresh) {
+  const M = metrics();
+  $('#game').classList.toggle('stack', M.stack);
+  $('#stage').style.setProperty('--sw', M.sw + 'px');
+  $('#stage').style.setProperty('--cw', M.cw + 'px');
+  const pl = $('#pile'); pl.replaceChildren(); if (S.last) pl.append(cardEl(S.last));
+  $('#roundN').textContent = S.round;
+  $('#targetN').textContent = S.target;
+  $('#codeN').textContent = CODE;
+  $('#deckN').textContent = S.deck.length;
+  const box = $('#players');
+  box.replaceChildren();
+  const n = S.players.length, off = ME >= 0 ? ME : 0, act = actor(S);
+  // في العرض الضيق يظهر مقعدي أولاً
+  const order = S.players.map((p, i) => i).sort((a, b) => ((a - off + n) % n) - ((b - off + n) % n));
+  order.forEach(i => {
+    const p = S.players[i];
+    const pn = el('div', 'panel ' + p.status);
+    pn.dataset.i = i; pn.dataset.pos = (i - off + n) % n;
+    if (i === ME) pn.classList.add('me');
+    if (i === act) pn.classList.add('current');
+    if (just === i) pn.classList.add('justnow');
+    const head = el('div', 'p-head');
+    head.append(el('span', 'p-name', p.name));
+    const bt = { frozen: '❄ مجمّد', bust: '💥 خسر الجولة', seven: '⭐ سبع بطاقات' }[p.status];
+    if (bt) head.append(el('span', 'badge', bt));
+    head.append(el('span', 'p-total', p.total));
+    const prog = el('div', 'prog'); const bar = el('i'); bar.style.width = Math.min(100, p.total / S.target * 100) + '%'; prog.append(bar);
+    const cards = el('div', 'p-cards');
+    const isFresh = fresh && fresh.p === i;
+    p.cards.forEach((c, k) => { const ce = cardEl(c); if (p.status === 'bust') ce.classList.add('dead'); if (isFresh && fresh.res === 'num' && k === p.cards.length - 1) ce.classList.add('pop'); cards.append(ce); });
+    if (p.bustCard) { const ce = cardEl(p.bustCard); ce.classList.add('boom'); if (isFresh && fresh.res === 'bust') ce.classList.add('pop'); cards.append(ce); }
+    p.mods.forEach((c, k) => { const ce = cardEl(c); if (p.status === 'bust') ce.classList.add('dead'); if (isFresh && fresh.res === 'mod' && k === p.mods.length - 1) ce.classList.add('pop'); cards.append(ce); });
+    const cn = cards.children.length;
+    if (!cn) cards.append(el('span', 'empty', 'لا توجد بطاقات بعد'));
+    else {
+      const step = cn > 1 ? Math.min(M.cw + 4, (M.avail - M.cw) / (cn - 1)) : 0;
+      [...cards.children].forEach((ce, k) => { if (k) ce.style.marginInlineStart = (step - M.cw) + 'px'; });
+    }
+    const foot = el('div', 'p-foot');
+    const l = el('span'); l.append('نقاط الجولة: ', el('b', '', roundScore(p)));
+    const dots = el('span', 'dots'); for (let k = 0; k < 7; k++) dots.append(el('i', k < p.cards.length ? 'on' : ''));
+    foot.append(l, dots);
+    pn.append(head, prog, cards, foot);
+    box.append(pn);
+  });
+  layout(M);
+  const top = topOf(S), mine = act === ME && act >= 0;
+  $('#turnBox').classList.toggle('mine', mine);
+  $('#whoLbl').textContent = mine ? 'دورك الآن!' : 'الدور على';
+  $('#who').textContent = act >= 0 ? S.players[act].name : '—';
+  const rk = $('#risk');
+  if (act < 0) rk.textContent = '';
+  else if (top && top.k === 'pick') { rk.textContent = top.kind === 'fr' ? 'يختار من يجمّد…' : 'يختار من يسحب ثلاث…'; rk.style.color = 'var(--ice)'; }
+  else if (top && top.k === 'auto') { rk.textContent = `يسحب ثلاث (باقي ${top.left})`; rk.style.color = '#d3b3ff'; }
+  else {
+    const p = S.players[act], r = bustRisk(p);
+    if (!p.cards.length) { rk.textContent = 'لا يوجد خطر حالياً'; rk.style.color = 'var(--ok)'; }
+    else { rk.textContent = `خطر التكرار ${Math.round(r * 100)}%`; rk.style.color = r > .35 ? 'var(--red)' : r > .18 ? 'var(--gold)' : 'var(--ok)'; }
+  }
+  if (ME < 0) { rk.textContent = '👁 أنت مشاهد'; rk.style.color = '#fff'; }
+  setButtons();
+}
+function setButtons() {
+  if (!S || S.phase === 'lobby') return;
+  const free = !pumping && !queue.length && !sending;
+  const myTurn = free && S.phase === 'play' && !S.q.length && S.cur === ME;
+  const p = ME >= 0 ? S.players[ME] : null;
+  $('#drawBtn').disabled = !myTurn;
+  $('#stayBtn').disabled = !myTurn || (!p.cards.length && !p.mods.length);
+  const a = actor(S);
+  $('#skipBtn').classList.toggle('hidden', !(free && S.phase === 'play' && S.host === PID && a >= 0 && a !== ME));
+}
+function flash(text, cls) {
+  const f = $('#flash'); const d = el('div', cls, text);
+  f.replaceChildren(d); setTimeout(() => d.remove(), 1500);
+}
+function panelOf(i) { return document.querySelector(`.panel[data-i="${i}"]`); }
+
+/* ================= الحركة ================= */
+// ينتظر انتهاء الحركة، مع مهلة احتياطية إذا كان التبويب في الخلفية
+const done = (an, ms) => Promise.race([an.finished, sleep(ms + 250)]);
+async function flyCard(c, pi, bust, keep, n) {
+  const d = $('#deck .card').getBoundingClientRect();
+  const fly = el('div', 'fly'); fly.style.left = d.left + 'px'; fly.style.top = d.top + 'px'; fly.style.setProperty('--w', d.width + 'px');
+  const inner = el('div', 'fly-in'); const face = cardEl(c); face.classList.add('ff');
+  inner.append(cardEl(null), face); fly.append(inner); document.body.append(fly);
+  const cx = innerWidth / 2 - (d.left + d.width / 2);
+  const cy = innerHeight / 2 - (d.top + d.height / 2);
+  const S2 = Math.min(2.1, innerWidth / d.width / 2.6);
+  const mid = `translate(${cx}px,${cy}px) scale(${S2})`;
+  const o = { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' };
+  sfx.draw();
+  inner.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(180deg)' }], o);
+  await done(fly.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: mid }], o), 460);
+  if (bust) {
+    fly.classList.add('bad'); sfx.bust();
+    await done(fly.animate([0, 14, -14, 10, -10, 5, 0].map(x => ({ transform: `translate(${cx + x}px,${cy}px) scale(${S2})` })), { duration: 520 }), 520);
+    await sleep(250);
+  } else {
+    if (c.t !== 'n') { fly.classList.add('good'); ({ fr: sfx.freeze, d3: sfx.d3, ch: sfx.chance }[c.t] || sfx.mod)(); } else sfx.ok(n || 0);
+    await sleep(c.t === 'n' ? 360 : 700);
+  }
+  const pn = keep ? panelOf(pi) : null;
+  if (pn) {
+    pn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const t = pn.querySelector('.p-cards').getBoundingClientRect();
+    const tx = t.left + t.width / 2 - (d.left + d.width / 2), ty = t.top + t.height / 2 - (d.top + d.height / 2);
+    await done(fly.animate([{ transform: mid }, { transform: `translate(${tx}px,${ty}px) scale(.5)`, opacity: .6 }], { duration: 320, easing: 'ease-in', fill: 'forwards' }), 320);
+  } else {
+    const t = $('#pile').getBoundingClientRect();
+    await done(fly.animate([{ transform: mid }, { transform: `translate(${t.left - d.left}px,${t.top - d.top}px) scale(1) rotate(7deg)` }], { duration: 300, easing: 'ease-in', fill: 'forwards' }), 300);
+  }
+  fly.remove();
+}
+
+/* ================= النوافذ ================= */
+function openModal(kind) { modalKind = kind || 'user'; $('#overlay').classList.remove('hidden'); }
+function hideModal() { $('#overlay').classList.add('hidden'); modalKind = null; }
+function showPick(top) {
+  const m = $('#modal'); m.replaceChildren();
+  m.append(el('h2', '', top.kind === 'fr' ? '❄ بطاقة تجميد' : '🃏 اسحب ثلاث'));
+  m.append(el('p', 'sub', top.kind === 'fr' ? 'اختر خصماً تجمّده' : 'اختر من يسحب ثلاث بطاقات متتالية'));
+  const box = el('div', 'targets');
+  pickOptions(S, top).forEach(i => {
+    const p = S.players[i];
+    const b = el('button', 'tbtn');
+    b.append(el('b', '', p.name));
+    if (i === ME) b.append(el('em', '', 'أنا'));
+    b.append(el('span', '', `${p.cards.length} بطاقات · ${roundScore(p)} نقطة · المجموع ${p.total}`));
+    b.onclick = () => { hideModal(); act(A.pick(i)).then(ok => { if (!ok) { modalV = 0; if (S) syncModal(); } }); };
+    box.append(b);
+  });
+  m.append(box);
+  openModal('pick');
+}
+function showResult() {
+  const won = S.phase === 'gameEnd';
+  const max = Math.max(...S.players.map(p => p.total));
+  const m = $('#modal'); m.replaceChildren();
+  if (won) {
+    const w = S.players.find(p => p.total === max);
+    m.append(el('div', 'crown', '👑'), el('h2', '', `${w.name} فاز باللعبة!`), el('p', 'sub', `بمجموع ${max} نقطة بعد ${S.round} جولات`));
+    sfx.win(); confetti();
+  } else {
+    m.append(el('h2', '', `نهاية الجولة ${S.round}`));
+    m.append(el('p', 'sub', max >= S.target ? 'تعادل في الصدارة! جولة فاصلة' : `الهدف ${S.target} نقطة`));
+  }
+  const tb = el('table');
+  [...S.players].sort((a, b) => b.total - a.total).forEach((p, k) => {
+    const tr = el('tr', p.total === max && max > 0 ? 'lead' : ''); tr.style.animationDelay = k * .08 + 's';
+    const st = { bust: '💥', frozen: '❄', seven: '⭐', active: '' }[p.status];
+    tr.append(el('td', 'n', p.name + (p.id === PID ? ' (أنت)' : '')), el('td', '', st), el('td', 'r' + (p.gain ? '' : ' z'), '+' + p.gain), el('td', 't', p.total));
+    tb.append(tr);
+  });
+  m.append(tb);
+  if (ME >= 0) {
+    const b = el('button', 'btn wide', won ? 'لعبة جديدة' : 'الجولة التالية');
+    b.onclick = () => { b.disabled = true; act(won ? A.again : A.next).then(ok => { if (!ok) b.disabled = false; }); };
+    m.append(b);
+  }
+  openModal('result');
+}
+function confetti() {
+  const cols = ['#f4c95d', '#ff5d5d', '#8fdcff', '#5fe3a1', '#c79bff', '#fff'];
+  for (let i = 0; i < 90; i++) {
+    const c = el('i', 'conf');
+    c.style.left = Math.random() * 100 + 'vw'; c.style.background = cols[i % cols.length];
+    c.style.animationDuration = 2 + Math.random() * 2.5 + 's'; c.style.animationDelay = Math.random() * 1.2 + 's';
+    document.body.append(c); setTimeout(() => c.remove(), 6000);
+  }
+}
+function showRules() {
+  const m = $('#modal'); m.replaceChildren();
+  m.append(el('h2', '', 'كيف ألعب؟'));
+  const d = el('div', 'rules');
+  d.innerHTML = `<ul>
+  <li>الأوراق مرقمة من <b>0 إلى 12</b>، وكل لاعب يسحب ورقة واحدة في دوره.</li>
+  <li>نقاط الجولة = مجموع أرقام أوراقك.</li>
+  <li>إذا سحبت <b>رقماً موجوداً عندك</b> تخسر الجولة وتصير نقاطها صفراً.</li>
+  <li>قبل السحب تقدر <b>تجمّد نفسك</b> فتحفظ نقاطك وتخرج من الجولة بأمان.</li>
+  <li>إذا جمعت <b>7 أرقام مختلفة</b> تأخذ <b>+15</b> وتنتهي الجولة فوراً.</li>
+  <li><b>×2</b> تضاعف مجموع أرقامك، و <b>+4</b> و <b>+8</b> تضاف لنقاطك.</li>
+  <li><b>❄ تجميد</b>: من تطلع له يختار خصماً يجمّده (لا يقدر يختار نفسه).</li>
+  <li><b>🍀 فرصة</b>: تبقى مع أوراقك، وإذا طلع لك رقم مكرر تحميك من الخسارة مرة واحدة ثم تُرمى مع الرقم المكرر.</li>
+  <li><b>اسحب ثلاث</b>: من تطلع له يختار لاعباً (أو نفسه) يسحب 3 أوراق متتالية.</li>
+  <li>أول من يصل <b>نقاط الفوز</b> في نهاية جولة وهو الأعلى يفوز.</li></ul>`;
+  const b = el('button', 'btn wide', 'فهمت');
+  b.onclick = () => { hideModal(); if (S && S.phase !== 'lobby') { modalV = 0; syncModal(); } };
+  m.append(d, b);
+  openModal('user');
+}
+
+/* ================= غرفة الانتظار ================= */
+const inviteLink = () => location.origin + location.pathname + '?room=' + CODE;
+function renderLobby() {
+  const host = S.host === PID;
+  const cs = $('#codeShow'); cs.replaceChildren(...CODE.split('').map(ch => el('span', '', ch)));
+  $('#linkIn').value = inviteLink();
+  $('#pcount').textContent = `(${S.players.length}/${MAXP})`;
+  const seats = $('#seats'); seats.replaceChildren();
+  S.players.forEach((p, i) => {
+    const r = el('div', 'seat');
+    r.append(el('span', 'num', i + 1), el('span', '', p.name));
+    if (p.id === S.host) r.append(el('span', 'tag', '👑 المشرف'));
+    if (p.id === PID) r.append(el('span', 'tag you', 'أنت'));
+    if (host && p.id !== PID) {
+      const x = el('button', 'icon', '✕'); x.title = 'إزالة'; x.style.marginInlineStart = 'auto';
+      x.onclick = () => act(A.kick(p.id));
+      r.append(x);
+    }
+    seats.append(r);
+  });
+  if (S.players.length < MAXP) seats.append(el('div', 'seat empty', 'بانتظار لاعبين آخرين…'));
+  $('#targetEdit').classList.toggle('hidden', !host);
+  $('#targetShow').classList.toggle('hidden', host);
+  $('#targetShow').textContent = S.target + ' نقطة';
+  const ti = $('#target');
+  if (document.activeElement !== ti) ti.value = S.target;
+  [...$('#chips').children].forEach(c => c.classList.toggle('on', +c.textContent === S.target));
+  const sb = $('#startBtn');
+  sb.classList.toggle('hidden', !host);
+  sb.disabled = S.players.length < MINP;
+  const hn = (S.players.find(p => p.id === S.host) || {}).name || 'المشرف';
+  $('#waitNote').textContent = host
+    ? (S.players.length < MINP ? 'شارك الرابط أو الرمز مع أصحابك — تحتاج لاعبَين على الأقل' : 'الكل جاهز؟ اضغط ابدأ اللعب')
+    : `بانتظار ${hn} ليبدأ اللعب…`;
+}
+
+/* ================= الدخول والخروج ================= */
+function homeErr(t) { $('#homeErr').textContent = t || ''; }
+function getName() {
+  const n = $('#nameIn').value.trim();
+  if (!n) { homeErr('اكتب اسمك أولاً'); $('#nameIn').focus(); return null; }
+  store('sahba_name', n);
+  return n;
+}
+function genCode() { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 5; i++) c += a[Math.floor(Math.random() * a.length)]; return c; }
+function enter(code, s) {
+  CODE = code; lastV = 0; queue = []; S = null; autoV = 0; modalV = 0;
+  try { history.replaceState(null, '', '?room=' + code); } catch (e) {}
+  Net.subscribe(code, onState);
+  onState(s);
+}
+let entering = false;
+async function createRoom() {
+  if (entering) return;
+  const name = getName(); if (!name) return;
+  entering = true; homeErr('');
+  try {
+    Net.cleanup();
+    for (let k = 0; k < 5; k++) {
+      const code = genCode();
+      const s = { v: 1, phase: 'lobby', host: PID, target: 200, players: [newPlayer(name)], round: 0, starter: -1, cur: 0, deck: [], discard: [], last: null, q: [], over: false, ev: [] };
+      if (await Net.create(code, s)) { enter(code, s); return; }
+    }
+    homeErr('تعذّر إنشاء الغرفة، حاول مرة ثانية');
+  } catch (e) { homeErr('تعذّر الاتصال بالخادم'); }
+  finally { entering = false; }
+}
+async function joinRoom(raw) {
+  if (entering) return;
+  const code = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { homeErr('رمز الدعوة من 5 خانات'); return; }
+  const name = getName(); if (!name) return;
+  entering = true; homeErr('');
+  try {
+    for (let k = 0; k < 6; k++) {
+      const s = await Net.get(code);
+      if (!s) { homeErr('الغرفة غير موجودة — تأكد من الرمز'); return; }
+      if (s.players.some(p => p.id === PID) || s.phase !== 'lobby') { enter(code, s); return; }
+      if (s.players.length >= MAXP) { homeErr('الغرفة ممتلئة'); return; }
+      const n = clone(s); n.players.push(newPlayer(name)); n.v = s.v + 1; n.ev = [];
+      if (await Net.update(code, n, s.v)) { enter(code, n); return; }
+    }
+    homeErr('الغرفة مزدحمة الآن، حاول مرة ثانية');
+  } catch (e) { homeErr('تعذّر الاتصال بالخادم'); }
+  finally { entering = false; }
+}
+function leaveLocal(msg) {
+  Net.unsubscribe();
+  CODE = null; S = null; queue = []; ME = -1; INVITE = null;
+  hideModal();
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  homeMode(); show('home'); homeErr(msg || '');
+}
+async function leaveRoom() {
+  if (S && S.phase === 'lobby' && ME >= 0) await act(A.kick(PID));
+  if (CODE) leaveLocal();
+}
+function homeMode() {
+  const inv = !!INVITE;
+  $('#homeTitle').textContent = inv ? 'دعوة للعب' : 'اسمك';
+  $('#inviteNote').classList.toggle('hidden', !inv);
+  $('#inviteNote').textContent = inv ? `أنت مدعو إلى الغرفة ${INVITE} — اختر اسمك وادخل` : '';
+  $('#joinBtn').classList.toggle('hidden', !inv);
+  $('#createBtn').classList.toggle('hidden', inv);
+  $('#codeBox').classList.toggle('hidden', inv);
+  $('#otherBtn').classList.toggle('hidden', !inv);
+}
+
+/* ================= التشغيل ================= */
+function init() {
+  const fan = $('#fan');
+  [{ t: 'n', v: 7 }, { t: 'x2' }, { t: 'n', v: 12 }, { t: 'fr' }, { t: 'n', v: 3 }].forEach((c, i) => { const e = cardEl(c); e.style.setProperty('--i', i); fan.append(e); });
+  $('#nameIn').value = store('sahba_name') || '';
+  const chips = $('#chips');
+  [100, 150, 200, 300].forEach(v => { const c = el('button', 'chip', v); c.onclick = () => act(A.target(v)); chips.append(c); });
+  $('#target').onchange = () => { const v = Math.max(20, Math.min(9999, parseInt($('#target').value, 10) || 200)); $('#target').value = v; act(A.target(v)); };
+  $('#createBtn').onclick = createRoom;
+  $('#joinBtn').onclick = () => joinRoom(INVITE);
+  $('#codeBtn').onclick = () => joinRoom($('#codeIn').value);
+  $('#codeIn').onkeydown = e => { if (e.key === 'Enter') joinRoom($('#codeIn').value); };
+  $('#nameIn').onkeydown = e => { if (e.key === 'Enter') (INVITE ? joinRoom(INVITE) : createRoom()); };
+  $('#otherBtn').onclick = () => { INVITE = null; try { history.replaceState(null, '', location.pathname); } catch (e) {} homeMode(); homeErr(''); };
+  $('#rulesBtn0').onclick = showRules; $('#rulesBtn').onclick = showRules;
+  $('#startBtn').onclick = () => act(A.start);
+  $('#leaveBtn').onclick = leaveRoom;
+  $('#copyBtn').onclick = async () => {
+    const b = $('#copyBtn'), link = inviteLink();
+    try { await navigator.clipboard.writeText(link); } catch (e) { const i = $('#linkIn'); i.select(); try { document.execCommand('copy'); } catch (e2) {} }
+    b.textContent = 'تم النسخ ✓'; setTimeout(() => { b.textContent = 'نسخ الرابط'; }, 1600);
+  };
+  if (navigator.share) {
+    $('#shareBtn').classList.remove('hidden');
+    $('#shareBtn').onclick = () => navigator.share({ title: 'سَحبة', text: `تعال العب معي سَحبة! رمز الغرفة: ${CODE}`, url: inviteLink() }).catch(() => {});
+  }
+  $('#drawBtn').onclick = () => act(A.draw);
+  $('#stayBtn').onclick = () => act(A.stay);
+  $('#skipBtn').onclick = () => act(A.skip);
+  $('#muteBtn').onclick = () => { muted = !muted; if (!muted) sfx.click(); $('#muteBtn').textContent = muted ? '🔇' : '🔊'; };
+  $('#exitBtn').onclick = () => {
+    const m = $('#modal'); m.replaceChildren();
+    m.append(el('h2', '', 'الخروج من الغرفة؟'), el('p', 'sub', 'مقعدك يبقى محفوظاً، وتقدر ترجع من نفس الرابط'));
+    const b1 = el('button', 'btn wide', 'نعم، خروج'); b1.onclick = () => leaveLocal();
+    const b2 = el('button', 'link', 'رجوع للعب'); b2.onclick = () => { hideModal(); if (S) { modalV = 0; syncModal(); } };
+    m.append(b1, b2); openModal('user');
+  };
+  addEventListener('resize', () => { if (S && S.phase !== 'lobby' && !$('#game').classList.contains('hidden')) render(); });
+
+  const room = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (room.length === 5) {
+    INVITE = room; homeMode();
+    // إذا كنت عضواً في هذه الغرفة من قبل ترجع إليها مباشرة
+    Net.get(room).then(s => {
+      if (CODE) return;
+      if (!s) { INVITE = null; homeMode(); homeErr('الغرفة غير موجودة أو انتهت'); }
+      else if (s.players.some(p => p.id === PID)) enter(room, s);
+    }, () => homeErr('تعذّر الاتصال بالخادم'));
+  } else homeMode();
+}
+init();
+</script>
+</body>
+</html>
