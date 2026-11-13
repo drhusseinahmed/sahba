@@ -304,6 +304,31 @@ tr.lead td.n::after{content:" 👑"}
 .mob .panel.bottom .p-cards .empty{font-size:13px}
 .mob .panel.bottom .p-foot{font-size:13px;margin-top:5px}
 .mob .panel.bottom.current{transform:none}
+
+/* ---------- الرسائل والملصقات ---------- */
+#chatBtn{width:48px;height:48px;font-size:22px;border-radius:14px;background:rgba(255,255,255,.16);flex:none}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+.fx-emo{position:absolute;font-size:56px;line-height:1;transform:translate(-50%,-50%);animation:emo 2.5s forwards;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+@keyframes emo{0%{transform:translate(-50%,-50%) scale(.2)}14%{transform:translate(-50%,-60%) scale(1.35)}28%{transform:translate(-50%,-55%) scale(1) rotate(-10deg)}42%{transform:translate(-50%,-55%) rotate(10deg)}56%{transform:translate(-50%,-55%) rotate(0)}80%{opacity:1}100%{transform:translate(-50%,-150%);opacity:0}}
+.fx-bub{position:absolute;max-width:220px;background:#fff;color:#1c1a17;font-weight:800;font-size:15px;line-height:1.4;padding:6px 12px;border-radius:14px;box-shadow:0 6px 16px rgba(0,0,0,.5);animation:bub 4s forwards;word-break:break-word}
+@keyframes bub{0%{transform:scale(.4);opacity:0}5%{transform:scale(1.1);opacity:1}9%{transform:scale(1)}90%{opacity:1}100%{opacity:0}}
+.fx-thr{position:absolute;left:0;top:0;font-size:40px;line-height:1}
+#chat,#throwPop{position:fixed;z-index:46;background:linear-gradient(#1c4d47,#0f2c29);border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.65)}
+#chat{left:8px;right:8px;bottom:10px;margin:0 auto;max-width:430px;padding:12px}
+.chat-emos{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.chat-emos button{font-size:28px;line-height:1.3;background:rgba(255,255,255,.08);border-radius:10px}
+.chat-emos button:active,.chat-phr button:active,#throwPop button:active{transform:scale(.9)}
+.chat-phr{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chat-phr button{background:rgba(255,255,255,.12);border-radius:99px;padding:5px 11px;font-weight:600;font-size:14px}
+#chatLog{max-height:104px;overflow:auto;font-size:13px;margin-bottom:8px}
+#chatLog b{color:var(--gold)}
+#chat .row input{direction:rtl;font-size:15px}
+.chat-tip{font-size:12px;opacity:.7;margin-top:8px;text-align:center}
+#throwPop{padding:8px;display:flex;gap:5px;flex-wrap:wrap;max-width:216px;justify-content:center}
+#throwPop b{width:100%;text-align:center;font-size:13px}
+#throwPop button{font-size:26px;line-height:1;background:rgba(255,255,255,.1);border-radius:10px;width:44px;height:44px}
+.panel.hit{animation:shake .5s}
+.panel.tap{cursor:pointer}
 </style>
 </head>
 <body>
@@ -386,12 +411,22 @@ tr.lead td.n::after{content:" 👑"}
       <div class="acts" id="acts">
         <button class="btn sm" id="drawBtn">اسحب ورقة</button>
         <button class="btn sm ice" id="stayBtn">❄ جمّد نفسي</button>
+        <button class="icon" id="chatBtn" title="رسائل وملصقات">💬</button>
       </div>
     </div>
     <main id="players"></main>
   </div>
 </section>
 
+<div id="fx"></div>
+<div id="chat" class="hidden">
+  <div class="chat-emos" id="chatEmos"></div>
+  <div class="chat-phr" id="chatPhr"></div>
+  <div id="chatLog"></div>
+  <div class="row"><input id="chatIn" maxlength="60" placeholder="اكتب رسالة…" autocomplete="off"><button class="btn mini" id="chatSend">إرسال</button></div>
+  <p class="chat-tip">💡 اضغط على مقعد أي لاعب لترمي عليه طماطة أو وردة</p>
+</div>
+<div id="throwPop" class="hidden"></div>
 <div id="overlay" class="hidden"><div id="modal"></div></div>
 <div id="flash"></div>
 
@@ -478,6 +513,9 @@ const SYN = {
   },
   // بداية الجولة: خلط الأوراق
   shuffle() { for (let i = 0; i < 14; i++) noise(.035, { type: 'highpass', f: 1800 + Math.random() * 1500, v: .16, at: i * .038 + Math.random() * .01 }); },
+  pop() { tone(660, .08, { type: 'triangle', v: .08 }); tone(990, .12, { v: .05, at: .05 }); },
+  throw() { tone(300, .4, { to: 950, v: .05 }); },
+  splat() { noise(.16, { type: 'lowpass', f: 700, v: .3 }); tone(130, .16, { to: 60, v: .16 }); },
   click() { tone(700, .05, { type: 'triangle', v: .06 }); },
 };
 // أصوات خاصة: ضع ملفات mp3 في مجلد sounds بجانب اللعبة (مثل sounds/bust.mp3) وستُستعمل بدل الأصوات المولّدة
@@ -559,12 +597,13 @@ function supaNet() {
     },
     subscribe(code, cb) {
       net.unsubscribe();
-      ch = sb.channel('sahba-' + code, { config: { broadcast: { self: false } } }).on('broadcast', { event: 's' }, m => cb(m.payload)).subscribe();
+      ch = sb.channel('sahba-' + code, { config: { broadcast: { self: false } } }).on('broadcast', { event: 's' }, m => cb(m.payload)).on('broadcast', { event: 'c' }, m => onChat(m.payload)).subscribe();
       const poll = () => net.get(code).then(s => { if (s) cb(s); }, () => {});
       timer = setInterval(poll, 3000);
       net._poll = poll;
     },
     unsubscribe() { if (ch) { sb.removeChannel(ch); ch = null; } clearInterval(timer); net._poll = null; },
+    send(m) { if (ch) ch.send({ type: 'broadcast', event: 'c', payload: m }); },
     cleanup() { sb.from(TABLE).delete().lt('updated_at', new Date(Date.now() - 2 * 864e5).toISOString()).then(() => {}, () => {}); },
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden && net._poll) net._poll(); });
@@ -573,7 +612,7 @@ function supaNet() {
 function localNet() {
   const key = c => 'sahba_room_' + c;
   let cb = null, code0 = null, bc = null;
-  try { bc = new BroadcastChannel('sahba'); bc.onmessage = e => { if (cb && e.data.code === code0) cb(e.data.s); }; } catch (e) {}
+  try { bc = new BroadcastChannel('sahba'); bc.onmessage = e => { if (!cb || e.data.code !== code0) return; if (e.data.c) onChat(e.data.c); else cb(e.data.s); }; } catch (e) {}
   const net = {
     online: false,
     async get(code) { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch (e) { return null; } },
@@ -587,6 +626,7 @@ function localNet() {
     },
     subscribe(code, c) { code0 = code; cb = c; },
     unsubscribe() { cb = null; },
+    send(m) { if (bc) bc.postMessage({ code: code0, c: m }); },
     cleanup() {},
   };
   return net;
@@ -889,6 +929,7 @@ function render(just, fresh) {
     const pn = el('div', 'panel ' + p.status);
     pn.dataset.i = i; pn.dataset.pos = (i - off + n) % n;
     if (i === off) pn.classList.add('bottom');
+    if (ME >= 0 && i !== ME) { pn.classList.add('tap'); pn.onclick = () => openThrow(i); }
     const short = M.mob && i !== off;
     if (i === ME) pn.classList.add('me');
     if (i === act) pn.classList.add('current');
@@ -943,6 +984,7 @@ function setButtons() {
   const free = !pumping && !queue.length && !sending;
   const myTurn = free && S.phase === 'play' && !S.q.length && S.cur === ME;
   const p = ME >= 0 ? S.players[ME] : null;
+  $('#chatBtn').classList.toggle('hidden', ME < 0);
   $('#drawBtn').disabled = !myTurn;
   $('#stayBtn').disabled = !myTurn || (!p.cards.length && !p.mods.length);
   const a = actor(S);
@@ -989,6 +1031,104 @@ async function flyCard(c, pi, bust, keep, n) {
     await done(fly.animate([{ transform: mid }, { transform: `translate(${t.left - d.left}px,${t.top - d.top}px) scale(1) rotate(7deg)` }], { duration: 300, easing: 'ease-in', fill: 'forwards' }), 300);
   }
   fly.remove();
+}
+
+/* ================= الرسائل والملصقات ================= */
+const EMOJIS = ['😂', '😭', '😎', '😡', '🔥', '👏', '😱', '🤲', '💀', '❤️', '🥶', '🤡'];
+const PHRASES = ['يلا بسرعة ⏰', 'هههههه', 'حظك نار 🔥', 'لا تسحب!', 'اسحب إذا بيك خير 😏', 'راحت عليّ 😭', 'مبروك 👏', 'والله حرام 💔', 'أنا الفايز 😎', 'جمّدوه ❄️'];
+const THROWS = [{ i: '🍅', h: '💥' }, { i: '🌹', h: '💖' }, { i: '🥚', h: '🍳' }, { i: '💋', h: '😘' }, { i: '⛄', h: '❄️' }, { i: '👟', h: '💢' }, { i: '🎂', h: '🎉' }, { i: '💧', h: '💦' }];
+let chatLog = [], lastSend = 0;
+// الرسائل عابرة: تُبث للموجودين في الغرفة ولا تُحفظ في القاعدة
+function sendChat(m) {
+  if (ME < 0 || !S || S.phase === 'lobby') return;
+  const now = Date.now(); if (now - lastSend < 450) return; lastSend = now;
+  m.f = PID;
+  try { Net.send(m); } catch (e) {}
+  onChat(m);
+}
+function onChat(m) {
+  if (!S || S.phase === 'lobby' || !m || typeof m !== 'object') return;
+  const i = S.players.findIndex(p => p.id === m.f);
+  if (i < 0) return;
+  if (m.k === 'e' && EMOJIS.includes(m.v)) { fxEmoji(i, m.v); sfx.pop(); }
+  else if (m.k === 't' && typeof m.v === 'string' && m.v.trim()) {
+    const t = m.v.trim().slice(0, 80);
+    chatLog.push({ n: S.players[i].name, t }); if (chatLog.length > 40) chatLog.shift();
+    fxBubble(i, t); sfx.pop(); renderLog();
+  }
+  else if (m.k === 'x') {
+    const to = S.players.findIndex(p => p.id === m.to), th = THROWS[m.v];
+    if (to >= 0 && to !== i && th) fxThrow(i, to, th);
+  }
+}
+function seatRect(i) { const pn = panelOf(i); return pn ? pn.getBoundingClientRect() : null; }
+function fxEmoji(i, e) {
+  const r = seatRect(i); if (!r) return;
+  const d = el('div', 'fx-emo', e);
+  d.style.left = (r.left + r.width / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px';
+  $('#fx').append(d); setTimeout(() => d.remove(), 2600);
+}
+function fxBubble(i, t) {
+  const r = seatRect(i); if (!r) return;
+  document.querySelectorAll(`.fx-bub[data-i="${i}"]`).forEach(x => x.remove());
+  const d = el('div', 'fx-bub', t); d.dataset.i = i;
+  $('#fx').append(d);
+  const w = d.offsetWidth, h = d.offsetHeight, below = r.top - h - 6 < 4;
+  d.style.left = Math.max(6, Math.min(innerWidth - w - 6, r.left + r.width / 2 - w / 2)) + 'px';
+  d.style.top = (below ? r.bottom + 6 : r.top - h - 6) + 'px';
+  setTimeout(() => d.remove(), 4000);
+}
+function fxThrow(a, b, th) {
+  const ra = seatRect(a), rb = seatRect(b); if (!ra || !rb) return;
+  const d = el('div', 'fx-thr', th.i); $('#fx').append(d);
+  const x0 = ra.left + ra.width / 2 - 20, y0 = ra.top + ra.height / 2 - 22, x1 = rb.left + rb.width / 2 - 20, y1 = rb.top + rb.height / 2 - 22;
+  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 90;
+  sfx.throw();
+  const an = d.animate([
+    { transform: `translate(${x0}px,${y0}px) rotate(0deg) scale(.6)` },
+    { transform: `translate(${mx}px,${my}px) rotate(360deg) scale(1.4)`, offset: .5 },
+    { transform: `translate(${x1}px,${y1}px) rotate(720deg) scale(1)` }], { duration: 750, easing: 'ease-in-out', fill: 'forwards' });
+  done(an, 750).then(() => {
+    d.textContent = th.h; sfx.splat();
+    const pn = panelOf(b); if (pn) { pn.classList.remove('hit'); void pn.offsetWidth; pn.classList.add('hit'); }
+    d.animate([{ transform: `translate(${x1}px,${y1}px) scale(1)`, opacity: 1 }, { transform: `translate(${x1}px,${y1}px) scale(2.6)`, opacity: 0 }], { duration: 650, fill: 'forwards' });
+    setTimeout(() => d.remove(), 700);
+  });
+}
+function renderLog() {
+  const box = $('#chatLog'); box.replaceChildren();
+  chatLog.slice(-12).forEach(m => { const r = el('div'); r.append(el('b', '', m.n + ': '), m.t); box.append(r); });
+  box.scrollTop = box.scrollHeight;
+}
+function toggleChat(open) {
+  const c = $('#chat');
+  c.classList.toggle('hidden', open === undefined ? !c.classList.contains('hidden') : !open);
+  if (!c.classList.contains('hidden')) { $('#throwPop').classList.add('hidden'); renderLog(); }
+}
+function openThrow(i) {
+  if (ME < 0 || i === ME || !S || S.phase === 'lobby') return;
+  const pop = $('#throwPop'); pop.replaceChildren(el('b', '', 'ارمِ على ' + S.players[i].name));
+  THROWS.forEach((th, k) => {
+    const b = el('button', '', th.i);
+    b.onclick = () => { pop.classList.add('hidden'); sendChat({ k: 'x', v: k, to: S.players[i].id }); };
+    pop.append(b);
+  });
+  pop.classList.remove('hidden'); toggleChat(false);
+  const r = seatRect(i), w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(6, Math.min(innerWidth - w - 6, r.left + r.width / 2 - w / 2)) + 'px';
+  pop.style.top = (r.bottom + 6 + h > innerHeight ? Math.max(6, r.top - h - 6) : r.bottom + 6) + 'px';
+}
+function initChat() {
+  EMOJIS.forEach(e => { const b = el('button', '', e); b.onclick = () => { sendChat({ k: 'e', v: e }); toggleChat(false); }; $('#chatEmos').append(b); });
+  PHRASES.forEach(t => { const b = el('button', '', t); b.onclick = () => { sendChat({ k: 't', v: t }); toggleChat(false); }; $('#chatPhr').append(b); });
+  const send = () => { const i = $('#chatIn'), t = i.value.trim(); if (!t) return; sendChat({ k: 't', v: t }); i.value = ''; toggleChat(false); };
+  $('#chatSend').onclick = send;
+  $('#chatIn').onkeydown = e => { if (e.key === 'Enter') send(); };
+  $('#chatBtn').onclick = () => toggleChat();
+  document.addEventListener('pointerdown', e => {
+    if (!e.target.closest('#chat,#chatBtn')) toggleChat(false);
+    if (!e.target.closest('#throwPop,.panel')) $('#throwPop').classList.add('hidden');
+  });
 }
 
 /* ================= النوافذ ================= */
@@ -1061,6 +1201,7 @@ function showRules() {
   <li><b>❄ تجميد</b>: من تطلع له يختار خصماً يجمّده (لا يقدر يختار نفسه).</li>
   <li><b>🍀 فرصة</b>: تبقى مع أوراقك، وإذا طلع لك رقم مكرر تحميك من الخسارة مرة واحدة ثم تُرمى مع الرقم المكرر.</li>
   <li><b>اسحب ثلاث</b>: من تطلع له يختار لاعباً (أو نفسه) يسحب 3 أوراق متتالية.</li>
+  <li><b>💬 الرسائل</b>: أرسل ملصقات ورسائل أثناء اللعب، واضغط على مقعد أي لاعب لترمي عليه شيئاً.</li>
   <li>أول من يصل <b>نقاط الفوز</b> في نهاية جولة وهو الأعلى يفوز.</li></ul>`;
   const b = el('button', 'btn wide', 'فهمت');
   b.onclick = () => { hideModal(); if (S && S.phase !== 'lobby') { modalV = 0; syncModal(); } };
@@ -1114,7 +1255,7 @@ function getName() {
 }
 function genCode() { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 5; i++) c += a[Math.floor(Math.random() * a.length)]; return c; }
 function enter(code, s) {
-  CODE = code; lastV = 0; queue = []; S = null; autoV = 0; modalV = 0;
+  CODE = code; lastV = 0; queue = []; S = null; autoV = 0; modalV = 0; chatLog = [];
   try { history.replaceState(null, '', '?room=' + code); } catch (e) {}
   Net.subscribe(code, onState);
   onState(s);
@@ -1157,7 +1298,7 @@ async function joinRoom(raw) {
 function leaveLocal(msg) {
   Net.unsubscribe();
   CODE = null; S = null; queue = []; ME = -1; INVITE = null;
-  hideModal();
+  hideModal(); toggleChat(false); $('#throwPop').classList.add('hidden');
   try { history.replaceState(null, '', location.pathname); } catch (e) {}
   homeMode(); show('home'); homeErr(msg || '');
 }
@@ -1202,6 +1343,7 @@ function init() {
     $('#shareBtn').classList.remove('hidden');
     $('#shareBtn').onclick = () => navigator.share({ title: 'سَحبة', text: `تعال العب معي سَحبة! رمز الغرفة: ${CODE}`, url: inviteLink() }).catch(() => {});
   }
+  initChat();
   $('#drawBtn').onclick = () => act(A.draw);
   $('#stayBtn').onclick = () => act(A.stay);
   $('#skipBtn').onclick = () => act(A.skip);
