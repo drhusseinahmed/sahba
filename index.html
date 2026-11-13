@@ -971,11 +971,7 @@ function render(just, fresh) {
   if (act < 0) rk.textContent = '';
   else if (top && top.k === 'pick') { rk.textContent = top.kind === 'fr' ? 'يختار من يجمّد…' : 'يختار من يسحب ثلاث…'; rk.style.color = 'var(--ice)'; }
   else if (top && top.k === 'auto') { rk.textContent = `يسحب ثلاث (باقي ${top.left})`; rk.style.color = '#d3b3ff'; }
-  else {
-    const p = S.players[act], r = bustRisk(p);
-    if (!p.cards.length) { rk.textContent = 'لا يوجد خطر حالياً'; rk.style.color = 'var(--ok)'; }
-    else { rk.textContent = `خطر التكرار ${Math.round(r * 100)}%`; rk.style.color = r > .35 ? 'var(--red)' : r > .18 ? 'var(--gold)' : 'var(--ok)'; }
-  }
+  else rk.textContent = '';
   if (ME < 0) { rk.textContent = '👁 أنت مشاهد'; rk.style.color = '#fff'; }
   setButtons();
 }
